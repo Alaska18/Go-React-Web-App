@@ -1,0 +1,19 @@
+FROM golang:1.22
+
+ENV GO111MODULE=on
+
+ENV GOFLAGS=-mod=vendor
+
+ENV APP_HOME /go/src/go-web-app
+
+RUN mkdir -p "$APP_HOME"
+
+WORKDIR "$APP_HOME"
+
+COPY . .
+
+RUN go build -o /go-web-app
+
+EXPOSE 10000
+
+CMD [ "/go-web-app" ]
