@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -19,6 +20,8 @@ type CacheSet struct {
 	Evicted bool `json: "evicted"`
 }
 
+var mCache = newLRUCache(1024, 5*time.Second)
+
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome to homepage!")
 }
@@ -31,7 +34,7 @@ func addToCache(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	evicted := lruSet(key, val)
+	evicted := mCache.set(key, val)
 	cacheSet := CacheSet{
 		Evicted: evicted,
 	}
@@ -43,7 +46,7 @@ func addToCache(w http.ResponseWriter, r *http.Request) {
 func getFromCache(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["key"]
-	val, ok := lruGet(key)
+	val, ok := mCache.get(key)
 	cacheGet := CacheGet{
 		Val: val,
 		Ok:  ok,
@@ -70,4 +73,5 @@ func handleRequests() {
 
 func main() {
 	handleRequests()
+	go mCache.periodicCleanup()
 }
